@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="b9e907c6-0160-43df-b46b-6301192c610f" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<api-gateway:autodiscovery apiId="${mule.api}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="236be143-ba50-4354-a158-87d9a72f9517" flowRef="custom-business-eventFlow" />
+	<flow name="custom-business-eventFlow" doc:id="2513a601-a859-4c3b-910c-d601daa0669b" tracking:enable-default-events="true">
+		<http:listener doc:name="Listener" doc:id="ab258e6e-e0cf-440a-9fbc-20f11da3e2ef" config-ref="HTTP_Listener_config" path="/business-event"/>
+		<tracking:custom-event doc:name="Custom Business Event" doc:id="422fd69d-282b-423b-b678-df1f7102faad" event-name="IA-Test">
+			<tracking:meta-data key="eventId" value="#[payload.eventId]" />
+		</tracking:custom-event>
+		<ee:transform doc:name="Set Final Response" doc:id="1e833c55-d529-4d34-9ac5-0fc6997a35d2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	response: payload
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="22e60854-57b2-4cc3-a838-787e631c9e2e" message='#["Custom Business Event Triggered..." : payload]'/>
+		<flow-ref doc:name="Flow Reference" doc:id="085e1f4d-e4d3-49c3-969b-223f34bb9b09" name="custom-business-event-Sub_Flow"/>
+	</flow>
+	<sub-flow name="custom-business-event-Sub_Flow" doc:id="34f6df7a-5cf8-440a-aa46-c9b42f012fe4" >
+		<logger level="INFO" doc:name="Logger" doc:id="f18a190a-a833-468e-a0fe-41b9b19a7698" message='#["Sub Flow Initiated..." : payload]'/>
+	</sub-flow>
+</mule>
